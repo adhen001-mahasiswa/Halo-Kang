@@ -8,33 +8,27 @@ class OrderDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFDFD0B8),
       appBar: AppBar(
-        title: const Text('Detail Pesanan'),
+        backgroundColor: const Color(0xFFDFD0B8),
+        elevation: 0,
+        title: const Text(
+          'Detail Pesanan',
+          style: TextStyle(
+            color: Color(0xFF222831),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFF222831)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'ID Pesanan: ${order['id']}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Nama Customer: ${order['customer']}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Total Bayar: Rp ${order['total']}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Status: ${order['status']}',
-              style: const TextStyle(fontSize: 16),
-            ),
+            _infoCard('ID Pesanan', order['id']),
+            _infoCard('Nama Customer', order['customer']),
+            _infoCard('Total Bayar', 'Rp ${order['total']}'),
+            _infoCard('Status', order['status']),
             const Spacer(),
             Row(
               children: [
@@ -48,15 +42,22 @@ class OrderDetailPage extends StatelessWidget {
                       );
                       Navigator.pop(context);
                     },
-                    child: const Text('Terima'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF222831),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Terima',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -65,13 +66,59 @@ class OrderDetailPage extends StatelessWidget {
                       );
                       Navigator.pop(context);
                     },
-                    child: const Text('Tolak'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Tolak',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _infoCard(String title, String value) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.black54,
+            ),
+          ),
+        ],
       ),
     );
   }

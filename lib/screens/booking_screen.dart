@@ -1,82 +1,187 @@
 import 'package:flutter/material.dart';
 import '../models/tukang.dart';
-import '../widgets/primary_button.dart';
-import '../services/mock_service.dart';
 
 class BookingScreen extends StatefulWidget {
   final Tukang tukang;
-  BookingScreen({required this.tukang});
+
+  const BookingScreen({super.key, required this.tukang});
 
   @override
-  _BookingScreenState createState() => _BookingScreenState();
+  State<BookingScreen> createState() => _BookingScreenState();
 }
 
 class _BookingScreenState extends State<BookingScreen> {
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
-  final addressCtrl = TextEditingController();
-  final notesCtrl = TextEditingController();
-  double priceEstimate = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    priceEstimate = widget.tukang.priceFrom;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final service = MockService();
+    final tukang = widget.tukang;
+
     return Scaffold(
-      appBar: AppBar(title: Text('Booking - ${widget.tukang.name}')),
+      backgroundColor: const Color(0xFFDFD0B8),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFDFD0B8),
+        elevation: 0,
+        title: Text(
+          'Booking - ${tukang.name}',
+          style: const TextStyle(
+            color: Color(0xFF222831),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFF222831)),
+      ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            ListTile(title: Text('Layanan'), subtitle: Text(widget.tukang.expertise)),
-            ListTile(title: Text('Estimasi Harga'), subtitle: Text('Rp ${priceEstimate.toInt()}')),
-            TextField(controller: addressCtrl, decoration: InputDecoration(labelText: 'Alamat lengkap')),
-            TextField(controller: notesCtrl, decoration: InputDecoration(labelText: 'Catatan (opsional)')),
-            SizedBox(height:12),
+            _infoCard("Layanan", tukang.expertise),
+            _infoCard(
+              "Estimasi Harga",
+              "Mulai dari Rp ${tukang.priceFrom.toInt()}",
+            ),
+            _inputField("Alamat lengkap"),
+            _inputField("Catatan (opsional)", maxLines: 3),
+            const SizedBox(height: 12),
+
+            /// PILIH TANGGAL & JAM
             Row(
               children: [
-                Expanded(child: OutlinedButton(onPressed: pickDate, child: Text(selectedDate == null ? 'Pilih Tanggal' : selectedDate!.toLocal().toString().split(' ')[0]))),
-                SizedBox(width:8),
-                Expanded(child: OutlinedButton(onPressed: pickTime, child: Text(selectedTime == null ? 'Pilih Jam' : selectedTime!.format(context)))),
+                Expanded(
+                  child: _outlineButton(
+                    selectedDate == null
+                        ? "Pilih Tanggal"
+                        : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                    _pickDate,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _outlineButton(
+                    selectedTime == null
+                        ? "Pilih Jam"
+                        : selectedTime!.format(context),
+                    _pickTime,
+                  ),
+                ),
               ],
             ),
-            Spacer(),
-            PrimaryButton(text: 'Lanjut ke Pembayaran', onPressed: () {
-              if (addressCtrl.text.trim().isEmpty || selectedDate==null || selectedTime==null) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lengkapi alamat, tanggal dan jam')));
-                return;
-              }
-              final schedule = DateTime(
-                selectedDate!.year, selectedDate!.month, selectedDate!.day,
-                selectedTime!.hour, selectedTime!.minute
-              );
-              final order = service.createOrder(
-                tukang: widget.tukang,
-                schedule: schedule,
-                address: addressCtrl.text,
-                notes: notesCtrl.text,
-                priceEstimate: priceEstimate,
-              );
-              Navigator.pushNamed(context, '/checkout', arguments: {'order': order});
-            }),
+
+            const Spacer(),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/checkout',
+                    arguments: {'tukang': tukang},
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF222831),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  "Lanjut ke Pembayaran",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Future<void> pickDate() async {
-    final d = await showDatePicker(context: context, initialDate: DateTime.now().add(Duration(days:1)), firstDate: DateTime.now(), lastDate: DateTime.now().add(Duration(days:365)));
-    if (d != null) setState(() => selectedDate = d);
+  /// ===== DATE PICKER =====
+  Future<void> _pickDate() async {
+    final result = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+    );
+
+    if (result != null) {
+      setState(() {
+        selectedDate = result;
+      });
+    }
   }
 
-  Future<void> pickTime() async {
-    final t = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-    if (t != null) setState(() => selectedTime = t);
+  /// ===== TIME PICKER =====
+  Future<void> _pickTime() async {
+    final result = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (result != null) {
+      setState(() {
+        selectedTime = result;
+      });
+    }
+  }
+
+  Widget _infoCard(String title, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(value),
+        ],
+      ),
+    );
+  }
+
+  Widget _inputField(String hint, {int maxLines = 1}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          hintText: hint,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _outlineButton(String text, VoidCallback onPressed) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        side: const BorderSide(color: Color(0xFF222831)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: Color(0xFF222831)),
+      ),
+    );
   }
 }

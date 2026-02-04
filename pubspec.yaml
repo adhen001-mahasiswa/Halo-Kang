@@ -8,8 +8,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # State management
   provider: ^6.1.2
+
+  # Utilities
   intl: ^0.18.0
+
+  # Firebase (KERANGKA DULU, CONFIG BELUM)
+  firebase_core: ^2.27.0
+  firebase_auth: ^4.17.0
+  cloud_firestore: ^4.15.0
 
 dev_dependencies:
   flutter_test:
@@ -20,4 +29,4 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/haloo-kang-logo.png
+    - assets/images/
