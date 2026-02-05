@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/tukang.dart';
+import '../screens/checkout_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final Tukang tukang;
@@ -39,13 +40,12 @@ class _BookingScreenState extends State<BookingScreen> {
             _infoCard("Layanan", tukang.expertise),
             _infoCard(
               "Estimasi Harga",
-              "Mulai dari Rp ${tukang.priceFrom.toInt()}",
+              "Rp ${tukang.priceFrom.toInt()}",
             ),
             _inputField("Alamat lengkap"),
             _inputField("Catatan (opsional)", maxLines: 3),
             const SizedBox(height: 12),
 
-            /// PILIH TANGGAL & JAM
             Row(
               children: [
                 Expanded(
@@ -74,10 +74,24 @@ class _BookingScreenState extends State<BookingScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pushNamed(
+                  if (selectedDate == null || selectedTime == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Pilih tanggal dan jam terlebih dahulu'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  Navigator.push(
                     context,
-                    '/checkout',
-                    arguments: {'tukang': tukang},
+                    MaterialPageRoute(
+                      builder: (_) => CheckoutScreen(
+                        tukang: tukang,
+                        date: selectedDate!,
+                        time: selectedTime!,
+                      ),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -87,10 +101,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: const Text(
-                  "Lanjut ke Pembayaran",
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: const Text("Lanjut ke Pembayaran"),
               ),
             ),
           ],
@@ -99,7 +110,6 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  /// ===== DATE PICKER =====
   Future<void> _pickDate() async {
     final result = await showDatePicker(
       context: context,
@@ -107,81 +117,49 @@ class _BookingScreenState extends State<BookingScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
-
-    if (result != null) {
-      setState(() {
-        selectedDate = result;
-      });
-    }
+    if (result != null) setState(() => selectedDate = result);
   }
 
-  /// ===== TIME PICKER =====
   Future<void> _pickTime() async {
     final result = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
-
-    if (result != null) {
-      setState(() {
-        selectedTime = result;
-      });
-    }
+    if (result != null) setState(() => selectedTime = result);
   }
 
-  Widget _infoCard(String title, String value) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          Text(value),
-        ],
-      ),
-    );
-  }
-
-  Widget _inputField(String hint, {int maxLines = 1}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          hintText: hint,
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _outlineButton(String text, VoidCallback onPressed) {
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
+  Widget _infoCard(String title, String value) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
         ),
-        side: const BorderSide(color: Color(0xFF222831)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Color(0xFF222831)),
-      ),
-    );
-  }
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title),
+            Text(value),
+          ],
+        ),
+      );
+
+  Widget _inputField(String hint, {int maxLines = 1}) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: TextField(
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hint,
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+      );
+
+  Widget _outlineButton(String text, VoidCallback onPressed) =>
+      OutlinedButton(onPressed: onPressed, child: Text(text));
 }

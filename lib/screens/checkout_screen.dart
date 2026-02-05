@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/tukang.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Tukang tukang;
+  final DateTime date;
+  final TimeOfDay time;
 
-  const CheckoutScreen({super.key, required this.tukang});
+  const CheckoutScreen({
+    super.key,
+    required this.tukang,
+    required this.date,
+    required this.time,
+  });
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -20,56 +29,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFDFD0B8),
         elevation: 0,
-        title: const Text(
-          "Checkout",
-          style: TextStyle(
-            color: Color(0xFF222831),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF222831)),
+        title: const Text("Checkout"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             _summaryCard(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 "Metode Pembayaran",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color(0xFF222831),
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-            const SizedBox(height: 8),
-            _paymentTile("Virtual Account", "va"),
-            _paymentTile("E-Wallet", "ewallet"),
+            _paymentTile("cod", "cash on delivery"),
+            _paymentTile("E-Wallet (Pending)", "ewallet"),
             const Spacer(),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Pembayaran berhasil (mock)")),
-                  );
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF222831),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text(
-                  "Bayar Sekarang",
-                  style: TextStyle(fontSize: 16),
-                ),
+                onPressed: _handlePayment,
+                child: const Text("Bayar Sekarang"),
               ),
             ),
           ],
@@ -78,45 +60,56 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _summaryCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.tukang.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              const Text("Tanggal: 2026-02-06"),
-            ],
-          ),
-          Text("Rp ${widget.tukang.priceFrom.toInt()}"),
-        ],
+  Future<void> _handlePayment() async {
+    final user = FirebaseAuth.instance.currentUser!;
+    final db = FirebaseFirestore.instance;
+
+    await db.collection('orders').add({
+      'userId': user.uid,
+      'mitraId': widget.tukang.uid,
+      'mitraName': widget.tukang.name,
+      'expertise': widget.tukang.expertise,
+      'price': widget.tukang.priceFrom.toInt(),
+      'date': '${widget.date.day}/${widget.date.month}/${widget.date.year}',
+      'time': widget.time.format(context),
+      'paymentMethod': paymentMethod,
+      'paymentStatus': 'pending', // 🔥 penting buat narasi
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Pembayaran pending (mock). Pesanan berhasil dibuat.',
+        ),
       ),
     );
+
+    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
-  Widget _paymentTile(String title, String value) {
-    return RadioListTile(
-      value: value,
-      groupValue: paymentMethod,
-      onChanged: (val) {
-        setState(() {
-          paymentMethod = val!;
-        });
-      },
-      title: Text(title),
-      activeColor: const Color(0xFF222831),
-    );
-  }
+  Widget _summaryCard() => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(widget.tukang.name),
+            Text('Rp ${widget.tukang.priceFrom.toInt()}'),
+          ],
+        ),
+      );
+
+  Widget _paymentTile(String title, String value) => RadioListTile(
+        value: value,
+        groupValue: paymentMethod,
+        onChanged: (val) => setState(() => paymentMethod = val!),
+        title: Text(title),
+      );
 }

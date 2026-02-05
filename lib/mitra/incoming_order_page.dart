@@ -1,115 +1,63 @@
 import 'package:flutter/material.dart';
-import 'order_detail_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class IncomingOrderPage extends StatelessWidget {
   const IncomingOrderPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> orders = [
-      {
-        'id': 'ORD001',
-        'customer': 'Silvia Putri',
-        'total': 25000,
-        'status': 'Menunggu',
-      },
-      {
-        'id': 'ORD002',
-        'customer': 'Andi',
-        'total': 40000,
-        'status': 'Menunggu',
-      },
-    ];
+    final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFDFD0B8),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFDFD0B8),
-        elevation: 0,
-        title: const Text(
-          'Pesanan Masuk',
-          style: TextStyle(
-            color: Color(0xFF222831),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF222831)),
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: orders.length,
-        itemBuilder: (context, index) {
-          final order = orders[index];
+      appBar: AppBar(title: const Text('Pesanan Masuk')),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('orders')
+            .where('mitraId', isEqualTo: uid)
+            .where('status', isEqualTo: 'pending')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => OrderDetailPage(order: order),
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Belum ada pesanan masuk'));
+          }
+
+          final orders = snapshot.data!.docs;
+
+          return ListView.builder(
+            itemCount: orders.length,
+            itemBuilder: (context, index) {
+              final doc = orders[index];
+              final data = doc.data() as Map<String, dynamic>;
+
+              return Card(
+                margin: const EdgeInsets.all(12),
+                child: ListTile(
+                  title: Text(data['expertise']),
+                  subtitle: Text(
+                    'Rp ${data['price']} • ${data['date']} ${data['time']}',
+                  ),
+                  trailing: ElevatedButton(
+                    onPressed: () async {
+                      await doc.reference.update({
+                        'status': 'accepted',
+                      });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pesanan diterima'),
+                        ),
+                      );
+                    },
+                    child: const Text('Terima'),
+                  ),
                 ),
               );
             },
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 6,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 26,
-                    backgroundColor: Color(0xFF222831),
-                    child: Icon(
-                      Icons.receipt_long,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          order['customer'],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Total: Rp ${order['total']}',
-                          style: const TextStyle(color: Colors.black54),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Status: ${order['status']}',
-                          style: const TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Colors.black45,
-                  ),
-                ],
-              ),
-            ),
           );
         },
       ),

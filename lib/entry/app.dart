@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/auth_service.dart';
+import '../services/firebase_service.dart';
+
 // Screens
+import '../entry/splash_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/booking_screen.dart';
-import '../screens/checkout_screen.dart';
 import '../screens/history_screen.dart';
-import 'splash_screen.dart';
+
+// Auth
 import '../auth/login_page.dart';
 import '../auth/register_page.dart';
 import '../auth/role_selection_page.dart';
+
+// Mitra
 import '../mitra/mitra_home_page.dart';
 import '../mitra/incoming_order_page.dart';
-import '../mitra/order_detail_page.dart';
-
-// Services
-import '../services/mock_service.dart';
+import '../mitra/mitra_register_page.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -25,7 +28,8 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<MockService>(create: (_) => MockService()),
+        Provider<AuthService>(create: (_) => AuthService()),
+        Provider<FirebaseService>(create: (_) => FirebaseService()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -42,12 +46,9 @@ class App extends StatelessWidget {
             foregroundColor: Colors.black87,
             elevation: 1,
           ),
-          textTheme: const TextTheme(
-            titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-            bodyMedium: TextStyle(fontSize: 14.0),
-          ),
         ),
 
+        // splash → login → role → home
         initialRoute: '/splash',
 
         // ROUTES TANPA PARAMETER
@@ -55,11 +56,17 @@ class App extends StatelessWidget {
           '/splash': (_) => const SplashScreen(),
           '/login': (_) => const LoginPage(),
           '/register': (_) => const RegisterPage(),
-          '/role': (_) => const RoleSelectionPage(),
-          '/mitra-home': (_) => const MitraHomePage(),
+
+          // USER
+          '/': (_) => const HomeScreen(),
           '/history': (_) => HistoryScreen(),
+
+          // MITRA
+          '/mitra-home': (_) => const MitraHomePage(),
           '/mitra-incoming': (_) => const IncomingOrderPage(),
-          '/': (_) => HomeScreen(),
+
+          '/role': (_) => const RoleSelectionPage(),
+          '/mitra-register': (_) => const MitraRegisterPage(),
         },
 
         // ROUTES DENGAN PARAMETER
@@ -75,12 +82,6 @@ class App extends StatelessWidget {
               final args = settings.arguments as Map<String, dynamic>;
               return MaterialPageRoute(
                 builder: (_) => BookingScreen(tukang: args['tukang']),
-              );
-
-            case '/checkout':
-              final args = settings.arguments as Map<String, dynamic>;
-              return MaterialPageRoute(
-                builder: (_) => CheckoutScreen(tukang: args['tukang']),
               );
           }
           return null;

@@ -15,7 +15,7 @@ dependencies:
   # Utilities
   intl: ^0.18.0
 
-  # Firebase (KERANGKA DULU, CONFIG BELUM)
+  # Firebase
   firebase_core: ^2.27.0
   firebase_auth: ^4.17.0
   cloud_firestore: ^4.15.0
@@ -24,9 +24,26 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_native_splash: ^2.4.7
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/images/
+
+# 🔥 INI HARUS DI LUAR flutter:
+flutter_native_splash:
+  color: "#DFD0B8"
+  image: assets/images/haloo-kang-logo.png
+  android: true
+  ios: true
+  web: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/haloo-kang-logo.png"
+  min_sdk_android: 21
+

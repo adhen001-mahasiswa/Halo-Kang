@@ -1,5 +1,5 @@
 class Tukang {
-  final String id;
+  final String uid; // 🔥 SATU-SATUNYA ID
   final String name;
   final String expertise;
   final double rating;
@@ -10,7 +10,7 @@ class Tukang {
   final String bio;
 
   Tukang({
-    required this.id,
+    required this.uid,
     required this.name,
     required this.expertise,
     required this.rating,
@@ -21,17 +21,17 @@ class Tukang {
     required this.bio,
   });
 
-  factory Tukang.fromMap(Map<String, dynamic> m) {
+  factory Tukang.fromMap(String uid, Map<String, dynamic> m) {
     return Tukang(
-      id: m['id'],
-      name: m['name'],
-      expertise: m['expertise'],
+      uid: uid,
+      name: m['name'] ?? '',
+      expertise: m['expertise'] ?? '',
       rating: (m['rating'] ?? 0).toDouble(),
       reviews: (m['reviews'] ?? 0),
-      priceFrom: (m['priceFrom'] ?? 0).toDouble(),
+      priceFrom: (m['price'] ?? m['priceFrom'] ?? 0).toDouble(),
       distanceKm: (m['distanceKm'] ?? 0).toDouble(),
       avatarUrl: m['avatarUrl'] ?? '',
-      bio: m['bio'] ?? '',
+      bio: m['description'] ?? m['bio'] ?? '',
     );
   }
 }

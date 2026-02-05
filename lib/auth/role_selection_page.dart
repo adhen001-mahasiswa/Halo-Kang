@@ -1,7 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RoleSelectionPage extends StatelessWidget {
   const RoleSelectionPage({super.key});
+
+  Future<void> _selectRole(BuildContext context, String role) async {
+    final user = FirebaseAuth.instance.currentUser!;
+    final db = FirebaseFirestore.instance;
+
+    // 🔥 simpan role ke Firestore
+    await db.collection('users').doc(user.uid).update({
+      'role': role,
+    });
+
+    if (!context.mounted) return;
+
+    if (role == 'user') {
+      // ✅ USER → HOME USER
+      Navigator.pushReplacementNamed(context, '/');
+    } else {
+      // ✅ MITRA → FORM DAFTAR MITRA
+      Navigator.pushReplacementNamed(context, '/mitra-register');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,26 +64,22 @@ class RoleSelectionPage extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // Card USER
+            // ===== USER =====
             _roleCard(
               title: "User",
               subtitle: "Pesan jasa tukang, service, dll",
               icon: Icons.person,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/');
-              },
+              onTap: () => _selectRole(context, 'user'),
             ),
 
             const SizedBox(height: 20),
 
-            // Card MITRA
+            // ===== MITRA =====
             _roleCard(
               title: "Mitra",
               subtitle: "Terima order dan kerjakan jasa",
               icon: Icons.handyman,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/mitra-home');
-              },
+              onTap: () => _selectRole(context, 'mitra'),
             ),
           ],
         ),

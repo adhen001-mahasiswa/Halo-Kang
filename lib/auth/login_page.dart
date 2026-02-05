@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+
     return Scaffold(
       backgroundColor: const Color(0xFFDFD0B8),
       body: Stack(
         children: [
-          // Lingkaran dekorasi atas kanan
           Positioned(
             top: -150,
             right: -150,
@@ -22,14 +26,10 @@ class LoginPage extends StatelessWidget {
               ),
             ),
           ),
-
-          // Konten utama
           SingleChildScrollView(
             child: Column(
               children: [
                 const SizedBox(height: 80),
-
-                // Header capsule
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -52,10 +52,7 @@ class LoginPage extends StatelessWidget {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
-                // Card putih login
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   padding: const EdgeInsets.all(24),
@@ -74,10 +71,10 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-
                       TextField(
+                        controller: emailController,
                         decoration: InputDecoration(
-                          hintText: "Username",
+                          hintText: "Email",
                           prefixIcon: const Icon(Icons.person_outline),
                           filled: true,
                           fillColor: const Color(0xFFF5F5F5),
@@ -88,8 +85,8 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-
                       TextField(
+                        controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
                           hintText: "Password",
@@ -102,27 +99,46 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 8),
-
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          "forget password ?",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ),
-
                       const SizedBox(height: 20),
-
-                      // Button Login
                       Center(
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(context, '/');
+                          onPressed: () async {
+                            if (emailController.text.isEmpty ||
+                                passwordController.text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('Email dan password wajib diisi'),
+                                ),
+                              );
+                              return;
+                            }
+
+                            try {
+                              final auth = context.read<AuthService>();
+
+                              final user = await auth.login(
+                                email: emailController.text.trim(),
+                                password: passwordController.text.trim(),
+                              );
+
+                              if (user == null) return;
+
+                              final role = await auth.getUserRole(user.uid);
+
+                              if (role == 'mitra') {
+                                Navigator.pushReplacementNamed(
+                                    context, '/mitra-home');
+                              } else {
+                                Navigator.pushReplacementNamed(context, '/');
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Login gagal'),
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF222831),
@@ -140,17 +156,12 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
                       const Center(child: Text("Or")),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
-                // Section bawah
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 30),
@@ -163,23 +174,6 @@ class LoginPage extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 30,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        icon: const Icon(Icons.email_outlined),
-                        label: const Text("Email"),
-                      ),
-                      const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

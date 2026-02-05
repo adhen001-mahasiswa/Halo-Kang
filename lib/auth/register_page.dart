@@ -1,7 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmController = TextEditingController();
+
+  bool isLoading = false;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,14 +36,11 @@ class RegisterPage extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF222831)),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Stack(
         children: [
-          // Lingkaran dekorasi atas kanan
           Positioned(
             top: -150,
             right: -150,
@@ -32,32 +53,21 @@ class RegisterPage extends StatelessWidget {
               ),
             ),
           ),
-
           SingleChildScrollView(
             child: Column(
               children: [
                 const SizedBox(height: 60),
-
-                // Maskot kecil (opsional, nanti bisa diganti image asset)
                 const CircleAvatar(
                   radius: 40,
                   backgroundColor: Color(0xFF222831),
                   child: Icon(Icons.person, color: Colors.white, size: 40),
                 ),
-
                 const SizedBox(height: 16),
-
                 const Text(
                   "Sign Up!",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
-
                 const SizedBox(height: 30),
-
-                // Card putih
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   padding: const EdgeInsets.all(24),
@@ -67,21 +77,34 @@ class RegisterPage extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      _buildInput("Username", Icons.person_outline),
+                      _buildInput(
+                        controller: nameController,
+                        hint: "Username",
+                        icon: Icons.person_outline,
+                      ),
                       const SizedBox(height: 16),
-                      _buildInput("Password", Icons.lock_outline,
-                          obscure: true),
+                      _buildInput(
+                        controller: emailController,
+                        hint: "Email",
+                        icon: Icons.email_outlined,
+                      ),
                       const SizedBox(height: 16),
-                      _buildInput("Confirm Password", Icons.lock_outline,
-                          obscure: true),
+                      _buildInput(
+                        controller: passwordController,
+                        hint: "Password",
+                        icon: Icons.lock_outline,
+                        obscure: true,
+                      ),
                       const SizedBox(height: 16),
-                      _buildInput("Email", Icons.email_outlined),
+                      _buildInput(
+                        controller: confirmController,
+                        hint: "Confirm Password",
+                        icon: Icons.lock_outline,
+                        obscure: true,
+                      ),
                       const SizedBox(height: 30),
                       ElevatedButton(
-                        onPressed: () {
-                          // Untuk MVP: setelah register balik ke login
-                          Navigator.pushReplacementNamed(context, '/role');
-                        },
+                        onPressed: isLoading ? null : _handleRegister,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF222831),
                           padding: const EdgeInsets.symmetric(
@@ -92,7 +115,11 @@ class RegisterPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text("Sign Up"),
+                        child: isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text("Sign Up"),
                       ),
                     ],
                   ),
@@ -105,8 +132,72 @@ class RegisterPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInput(String hint, IconData icon, {bool obscure = false}) {
+  Future<void> _handleRegister() async {
+    if (emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        confirmController.text.isEmpty ||
+        nameController.text.isEmpty) {
+      _showSnack('Semua field wajib diisi');
+      return;
+    }
+
+    if (passwordController.text != confirmController.text) {
+      _showSnack('Password tidak sama');
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final auth = context.read<AuthService>();
+
+      final user = await auth.register(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+        role: 'user',
+        name: nameController.text.trim(),
+      );
+
+      // ✅ REGISTER BENAR-BENAR BERHASIL
+      if (!mounted) return;
+
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/role',
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      // 🔥 KASUS PALING SERING (USER SEBENARNYA SUDAH ADA)
+      if (e.code == 'email-already-in-use') {
+        final currentUser = FirebaseAuth.instance.currentUser;
+
+        if (currentUser != null && mounted) {
+          Navigator.pushReplacementNamed(context, '/role');
+          return;
+        }
+      }
+
+      _showSnack(e.message ?? 'Register gagal');
+    } catch (e) {
+      _showSnack(e.toString());
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Widget _buildInput({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool obscure = false,
+  }) {
     return TextField(
+      controller: controller,
       obscureText: obscure,
       decoration: InputDecoration(
         hintText: hint,
